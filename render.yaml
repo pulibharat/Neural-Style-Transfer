@@ -1,0 +1,9 @@
+services:
+  - type: web_service
+    name: neural-style-transfer
+    env: python
+    branch: main
+    plan: free
+    pythonVersion: 3.12.17
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
