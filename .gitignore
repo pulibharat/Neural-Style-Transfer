@@ -1,0 +1,38 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Project workspace settings
+*.code-workspace
+.vscode/
+.idea/
+
+# Data and training results
+content_data/
+content_img/
+style_data/
+style_img/
+experiment/
+mana/
+weights/
+
+# Model weights and checkpoints
+*.pth
+*.pt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Mac files
+*.DS_Store
