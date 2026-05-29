@@ -90,7 +90,8 @@ http://localhost:5000
 ## Deployment notes
 
 - Push only the code, UI, and config files listed above.
-- Add model weights to the deployment environment separately.
+- Model weights are not in git. On deploy, weights are downloaded automatically from the [AdaIN release](https://github.com/naoto0804/pytorch-AdaIN/releases/tag/v0.0.0) on first startup (or run `python scripts/download_weights.py` during build).
+- Optional Render build command: `pip install -r requirements.txt && python scripts/download_weights.py`
 - If deploying to Heroku or Render, the included `Procfile` uses `gunicorn`.
 - Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
 - Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).

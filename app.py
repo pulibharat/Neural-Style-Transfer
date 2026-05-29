@@ -43,6 +43,18 @@ encoder = None
 decoder = None
 
 
+def ensure_weights():
+    """Fetch weights at startup if missing (e.g. on Render where weights/ is not in git)."""
+    if os.path.isfile(VGG_WEIGHT_PATH) and os.path.isfile(DECODER_WEIGHT_PATH):
+        return
+    try:
+        from scripts.download_weights import main as download_weights
+        if download_weights() != 0:
+            print("Weight download failed.")
+    except Exception as exc:
+        print(f"Could not download weights: {exc}")
+
+
 def load_models():
     if not os.path.exists(VGG_WEIGHT_PATH) or not os.path.exists(DECODER_WEIGHT_PATH):
         raise FileNotFoundError(
@@ -58,6 +70,7 @@ def load_models():
 
 
 try:
+    ensure_weights()
     encoder, decoder = load_models()
 except FileNotFoundError as e:
     print(e)
