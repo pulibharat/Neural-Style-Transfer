@@ -109,6 +109,7 @@ pip install -r requirements.txt && python scripts/download_weights.py
 - If deploying to Heroku or Render, the included `Procfile` uses `gunicorn` with a 300s timeout.
 - On Render, set **Start command** to match the Procfile (or leave blank to use Procfile):
   `gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 1 app:app`
+- **Memory:** PyTorch + VGG needs more than **512 MB**. Free tier often hits `SIGKILL` / out of memory. Use **Starter (1 GB+)** for reliable inference, or run locally.
 - Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
 - Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).
 - On Render, use **Manual Deploy → Deploy latest commit** so the build picks up the newest `main`, not an old failed deploy.

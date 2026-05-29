@@ -1,3 +1,4 @@
+import gc
 import os
 import threading
 import torch
@@ -37,8 +38,8 @@ class UploadForm(FlaskForm):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_num_threads(1)
 
-# Smaller images on Render free tier (512 MB RAM); override with INFERENCE_SIZE=512 locally
-_default_size = '384' if os.environ.get('RENDER') else '512'
+# Render free tier is 512 MB RAM — use 256px inference unless overridden
+_default_size = '256' if os.environ.get('RENDER') else '512'
 INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', _default_size))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -90,6 +91,7 @@ def load_models():
     load_decoder_checkpoint(dec, DECODER_WEIGHT_PATH)
     enc.eval()
     dec.eval()
+    gc.collect()
     return enc, dec
 
 
@@ -104,19 +106,6 @@ def get_models():
         ensure_weights()
         encoder, decoder = load_models()
         return encoder, decoder
-
-
-def _warmup_models():
-    try:
-        get_models()
-        print('Models loaded and ready.')
-    except Exception as exc:
-        print(f'Model warmup failed: {exc}')
-
-
-# Download/load in background on Render so the first form submit is less likely to time out
-if os.environ.get('RENDER'):
-    threading.Thread(target=_warmup_models, daemon=True, name='model-warmup').start()
 
 
 def allowed_file(filename):
@@ -138,15 +127,12 @@ def style_transfer(content_image, style_image, encoder, decoder, alpha, device):
     content_image = content_transform(content_image).unsqueeze(0).to(device)
     style_image = style_transform(style_image).unsqueeze(0).to(device)
 
-    with torch.no_grad():
+    with torch.inference_mode():
         content_feats = encoder(content_image, is_test=True)
         style_feats = encoder(style_image, is_test=True)
-
         stylized_feats = adaptive_instance_normalization(
             content_feats, style_feats)
-
         stylized_feats = alpha * stylized_feats + (1 - alpha) * content_feats
-
         stylized_image = decoder(stylized_feats)
 
     return stylized_image
@@ -209,6 +195,11 @@ def index():
                         app.config['UPLOAD_FOLDER'], result_filename)
                     save_image(stylized_image, result_path)
                     result_image = result_filename
+                except MemoryError:
+                    error = (
+                        'Server ran out of memory (Render free tier is 512 MB). '
+                        'Use smaller images, set INFERENCE_SIZE=256, or upgrade to a 1 GB+ instance.'
+                    )
                 except (FileNotFoundError, RuntimeError) as e:
                     error = (
                         'Model weights failed to load on the server. '
@@ -222,6 +213,22 @@ def index():
 
     return render_template('index.html', form=form, result_image=result_image, content_image=content_filename,
                            style_image=style_filename, error=error)
+
+
+@app.errorhandler(500)
+def internal_error(exc):
+    app.logger.exception(exc)
+    return render_template(
+        'index.html',
+        form=UploadForm(),
+        result_image=None,
+        content_image=None,
+        style_image=None,
+        error=(
+            'Internal server error — often caused by out-of-memory on Render free tier (512 MB). '
+            'Try smaller JPG images or upgrade your instance.'
+        ),
+    ), 500
 
 
 @app.route('/health')

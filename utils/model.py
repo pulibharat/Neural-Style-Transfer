@@ -1,3 +1,5 @@
+import gc
+
 import torch.nn as nn
 import torch
 
@@ -74,10 +76,12 @@ class VGGEncoder(nn.Module):
             nn.Conv2d(512, 512, (3, 3)),
             nn.ReLU()  # relu5-4
         )
-        # loads pretrained VGG weights from file
-        self.vgg.load_state_dict(torch.load(vgg_path))
-        # self.vgg.children() returns all layers inside Sequential.
+        # Load weights, keep only layers up to relu4-1, then free the full VGG to save RAM
+        vgg_state = torch.load(vgg_path, map_location='cpu')
+        self.vgg.load_state_dict(vgg_state)
+        del vgg_state
         self.vgg = nn.Sequential(*list(self.vgg.children())[:31])
+        gc.collect()
 #         [
 #  Conv,
 #  ReLU,
