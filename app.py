@@ -55,6 +55,22 @@ def ensure_weights():
         print(f"Could not download weights: {exc}")
 
 
+def load_decoder_checkpoint(decoder, path):
+    """Load decoder weights from train.py (net.* keys) or net-only checkpoints (1.weight, ...)."""
+    state = torch.load(path, map_location=device)
+    if isinstance(state, dict) and 'state_dict' in state:
+        state = state['state_dict']
+
+    if not any(k.startswith('net.') for k in state):
+        try:
+            decoder.net.load_state_dict(state)
+            return
+        except RuntimeError:
+            state = {f'net.{k}': v for k, v in state.items()}
+
+    decoder.load_state_dict(state)
+
+
 def load_models():
     if not os.path.exists(VGG_WEIGHT_PATH) or not os.path.exists(DECODER_WEIGHT_PATH):
         raise FileNotFoundError(
@@ -63,7 +79,7 @@ def load_models():
 
     enc = VGGEncoder(VGG_WEIGHT_PATH).to(device)
     dec = Decoder().to(device)
-    dec.load_state_dict(torch.load(DECODER_WEIGHT_PATH, map_location=device))
+    load_decoder_checkpoint(dec, DECODER_WEIGHT_PATH)
     enc.eval()
     dec.eval()
     return enc, dec
@@ -72,7 +88,7 @@ def load_models():
 try:
     ensure_weights()
     encoder, decoder = load_models()
-except FileNotFoundError as e:
+except (FileNotFoundError, RuntimeError) as e:
     print(e)
     encoder = None
     decoder = None
@@ -151,10 +167,8 @@ def index():
             if content_filename and style_filename:
                 if encoder is None or decoder is None:
                     error = (
-                        'Model weights are not available. '
-                        'On Render: upload your trained decoder_2.pth to a GitHub Release, '
-                        'set DECODER_WEIGHT_URL to that file URL, and redeploy. '
-                        'vgg_normalised.pth is downloaded automatically; decoder_2.pth must be yours.'
+                        'Model weights failed to load on the server. '
+                        'Redeploy the latest code from GitHub (main), then check Render logs for errors.'
                     )
                 else:
                     content_path = os.path.join(
