@@ -16,7 +16,11 @@ VGG_URL = os.environ.get(
     "VGG_WEIGHT_URL",
     "https://github.com/naoto0804/pytorch-AdaIN/releases/download/v0.0.0/vgg_normalised.pth",
 )
-DECODER_URL = os.environ.get("DECODER_WEIGHT_URL", "")
+# Your trained checkpoint (GitHub Release v1.0). Override with DECODER_WEIGHT_URL if needed.
+DEFAULT_DECODER_URL = (
+    "https://github.com/pulibharat/Neural-Style-Transfer/releases/download/v1.0/decoder_2.pth"
+)
+DECODER_URL = os.environ.get("DECODER_WEIGHT_URL", DEFAULT_DECODER_URL)
 
 
 def download_file(url: str, dest: str) -> None:
@@ -49,10 +53,9 @@ def main() -> int:
         except Exception as exc:
             print(f"Failed to download decoder_2.pth: {exc}", file=sys.stderr)
             failed = True
-    else:
+    elif not DECODER_URL:
         print(
-            "decoder_2.pth is missing and DECODER_WEIGHT_URL is not set.\n"
-            "Upload your trained decoder_2.pth (e.g. GitHub Release) and set DECODER_WEIGHT_URL on Render.",
+            "decoder_2.pth is missing. Set DECODER_WEIGHT_URL or add a GitHub Release asset.",
             file=sys.stderr,
         )
         failed = True
