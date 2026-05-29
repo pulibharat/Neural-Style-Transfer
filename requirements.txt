@@ -5,7 +5,7 @@ Pillow==12.0.0
 torch==2.2.2
 torchvision==0.17.2
 tqdm==4.66.4
-Weekzeug==3.1.4
+Werkzeug==3.1.4
 WTForms==3.2.1
 numpy>=1.24,<2.0
-gunicorn
+gunicorn==22.0.0
