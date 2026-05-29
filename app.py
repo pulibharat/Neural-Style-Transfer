@@ -150,7 +150,12 @@ def index():
 
             if content_filename and style_filename:
                 if encoder is None or decoder is None:
-                    error = 'Model weights are not available. Please add the required weights to weights/ and restart the app.'
+                    error = (
+                        'Model weights are not available. '
+                        'On Render: upload your trained decoder_2.pth to a GitHub Release, '
+                        'set DECODER_WEIGHT_URL to that file URL, and redeploy. '
+                        'vgg_normalised.pth is downloaded automatically; decoder_2.pth must be yours.'
+                    )
                 else:
                     content_path = os.path.join(
                         app.config['UPLOAD_FOLDER'], content_filename)

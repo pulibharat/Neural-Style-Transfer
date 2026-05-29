@@ -90,8 +90,22 @@ http://localhost:5000
 ## Deployment notes
 
 - Push only the code, UI, and config files listed above.
-- Model weights are not in git. On deploy, weights are downloaded automatically from the [AdaIN release](https://github.com/naoto0804/pytorch-AdaIN/releases/tag/v0.0.0) on first startup (or run `python scripts/download_weights.py` during build).
-- Optional Render build command: `pip install -r requirements.txt && python scripts/download_weights.py`
+- Model weights are not in git.
+- **VGG** (`vgg_normalised.pth`): auto-downloaded from the [AdaIN release](https://github.com/naoto0804/pytorch-AdaIN/releases/tag/v0.0.0) if missing.
+- **Decoder** (`decoder_2.pth`): use **your trained checkpoint** — not the public `decoder.pth`.
+
+### Deploy your trained `decoder_2.pth` on Render
+
+1. On GitHub: **Releases → Create a new release** → attach `decoder_2.pth` from your local `weights/` folder.
+2. Copy the release asset URL (right-click the file → copy link).
+3. In Render → **Environment** → add `DECODER_WEIGHT_URL` = that URL.
+4. Build command (recommended):
+
+```bash
+pip install -r requirements.txt && python scripts/download_weights.py
+```
+
+5. Redeploy with **Deploy latest commit**.
 - If deploying to Heroku or Render, the included `Procfile` uses `gunicorn`.
 - Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
 - Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).
