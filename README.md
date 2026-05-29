@@ -92,8 +92,9 @@ http://localhost:5000
 - Push only the code, UI, and config files listed above.
 - Add model weights to the deployment environment separately.
 - If deploying to Heroku or Render, the included `Procfile` uses `gunicorn`.
-- Render defaults to Python 3.14, but this app needs Python 3.12 for `torch==2.5.1`.
-- Add a `runtime.txt` file with `python-3.12.17` to pin the Python version on Render.
+- Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
+- Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).
+- On Render, use **Manual Deploy → Deploy latest commit** so the build picks up the newest `main`, not an old failed deploy.
 
 ## Optional training
 
