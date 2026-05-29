@@ -1,4 +1,5 @@
 import os
+import threading
 import torch
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from flask_wtf import FlaskForm
@@ -41,6 +42,7 @@ DECODER_WEIGHT_PATH = os.path.join(WEIGHTS_DIR, 'decoder_2.pth')
 
 encoder = None
 decoder = None
+_models_lock = threading.Lock()
 
 
 def ensure_weights():
@@ -85,13 +87,17 @@ def load_models():
     return enc, dec
 
 
-try:
-    ensure_weights()
-    encoder, decoder = load_models()
-except (FileNotFoundError, RuntimeError) as e:
-    print(e)
-    encoder = None
-    decoder = None
+def get_models():
+    """Load models on first use so gunicorn can bind PORT before heavy download/load."""
+    global encoder, decoder
+    if encoder is not None and decoder is not None:
+        return encoder, decoder
+    with _models_lock:
+        if encoder is not None and decoder is not None:
+            return encoder, decoder
+        ensure_weights()
+        encoder, decoder = load_models()
+        return encoder, decoder
 
 
 def allowed_file(filename):
@@ -165,38 +171,43 @@ def index():
                 style_filename = form.style_path.data
 
             if content_filename and style_filename:
-                if encoder is None or decoder is None:
-                    error = (
-                        'Model weights failed to load on the server. '
-                        'Redeploy the latest code from GitHub (main), then check Render logs for errors.'
-                    )
-                else:
+                try:
+                    enc, dec = get_models()
                     content_path = os.path.join(
                         app.config['UPLOAD_FOLDER'], content_filename)
                     style_path = os.path.join(
                         app.config['UPLOAD_FOLDER'], style_filename)
 
-                    try:
-                        content_image = Image.open(content_path).convert('RGB')
-                        style_image = Image.open(style_path).convert('RGB')
+                    content_image = Image.open(content_path).convert('RGB')
+                    style_image = Image.open(style_path).convert('RGB')
 
-                        alpha = float(form.alpha.data)
-                        stylized_image = style_transfer(
-                            content_image, style_image, encoder, decoder, alpha, device)
+                    alpha = float(form.alpha.data)
+                    stylized_image = style_transfer(
+                        content_image, style_image, enc, dec, alpha, device)
 
-                        result_filename = 'stylized_' + content_filename
-                        result_path = os.path.join(
-                            app.config['UPLOAD_FOLDER'], result_filename)
-                        save_image(stylized_image, result_path)
-
-                        result_image = result_filename
-                    except Exception as e:
-                        error = str(e)
+                    result_filename = 'stylized_' + content_filename
+                    result_path = os.path.join(
+                        app.config['UPLOAD_FOLDER'], result_filename)
+                    save_image(stylized_image, result_path)
+                    result_image = result_filename
+                except (FileNotFoundError, RuntimeError) as e:
+                    error = (
+                        'Model weights failed to load on the server. '
+                        'Redeploy the latest code from GitHub (main), then check Render logs. '
+                        f'Details: {e}'
+                    )
+                except Exception as e:
+                    error = str(e)
             else:
                 error = 'Please upload both a content image and a style image.'
 
     return render_template('index.html', form=form, result_image=result_image, content_image=content_filename,
                            style_image=style_filename, error=error)
+
+
+@app.route('/health')
+def health():
+    return 'ok', 200
 
 
 @app.route('/uploads/<filename>')
