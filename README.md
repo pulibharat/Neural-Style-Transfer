@@ -106,7 +106,9 @@ pip install -r requirements.txt && python scripts/download_weights.py
 ```
 
 5. Redeploy with **Deploy latest commit**.
-- If deploying to Heroku or Render, the included `Procfile` uses `gunicorn`.
+- If deploying to Heroku or Render, the included `Procfile` uses `gunicorn` with a 300s timeout.
+- On Render, set **Start command** to match the Procfile (or leave blank to use Procfile):
+  `gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 1 app:app`
 - Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
 - Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).
 - On Render, use **Manual Deploy → Deploy latest commit** so the build picks up the newest `main`, not an old failed deploy.

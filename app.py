@@ -35,6 +35,12 @@ class UploadForm(FlaskForm):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.set_num_threads(1)
+
+# Smaller images on Render free tier (512 MB RAM); override with INFERENCE_SIZE=512 locally
+_default_size = '384' if os.environ.get('RENDER') else '512'
+INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', _default_size))
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEIGHTS_DIR = os.path.join(BASE_DIR, 'weights')
 VGG_WEIGHT_PATH = os.path.join(WEIGHTS_DIR, 'vgg_normalised.pth')
@@ -100,6 +106,19 @@ def get_models():
         return encoder, decoder
 
 
+def _warmup_models():
+    try:
+        get_models()
+        print('Models loaded and ready.')
+    except Exception as exc:
+        print(f'Model warmup failed: {exc}')
+
+
+# Download/load in background on Render so the first form submit is less likely to time out
+if os.environ.get('RENDER'):
+    threading.Thread(target=_warmup_models, daemon=True, name='model-warmup').start()
+
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower(
@@ -108,12 +127,12 @@ def allowed_file(filename):
 
 def style_transfer(content_image, style_image, encoder, decoder, alpha, device):
     content_transform = transforms.Compose([
-        transforms.Resize(512),
+        transforms.Resize(INFERENCE_SIZE),
         transforms.ToTensor()
     ])
 
     style_transform = transforms.Compose([
-        transforms.Resize(512),
+        transforms.Resize(INFERENCE_SIZE),
         transforms.ToTensor()
     ])
     content_image = content_transform(content_image).unsqueeze(0).to(device)
