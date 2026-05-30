@@ -38,8 +38,9 @@ class UploadForm(FlaskForm):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_num_threads(1)
 
-# Same resolution locally and on Render (512). Set INFERENCE_SIZE=384 or 256 on Render if OOM.
-INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', '512'))
+# Local: 512px. Render: 384px default (512 often causes 502/OOM on 512 MB free tier).
+_default_size = '384' if os.environ.get('RENDER') else '512'
+INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', _default_size))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEIGHTS_DIR = os.path.join(BASE_DIR, 'weights')
@@ -114,26 +115,28 @@ def allowed_file(filename):
 
 
 def style_transfer(content_image, style_image, encoder, decoder, alpha, device):
-    content_transform = transforms.Compose([
+    transform = transforms.Compose([
         transforms.Resize(INFERENCE_SIZE),
-        transforms.ToTensor()
+        transforms.ToTensor(),
     ])
-
-    style_transform = transforms.Compose([
-        transforms.Resize(INFERENCE_SIZE),
-        transforms.ToTensor()
-    ])
-    content_image = content_transform(content_image).unsqueeze(0).to(device)
-    style_image = style_transform(style_image).unsqueeze(0).to(device)
 
     with torch.inference_mode():
-        content_feats = encoder(content_image, is_test=True)
-        style_feats = encoder(style_image, is_test=True)
-        stylized_feats = adaptive_instance_normalization(
-            content_feats, style_feats)
-        stylized_feats = alpha * stylized_feats + (1 - alpha) * content_feats
-        stylized_image = decoder(stylized_feats)
+        content_t = transform(content_image).unsqueeze(0).to(device)
+        content_feats = encoder(content_t, is_test=True)
+        del content_t
 
+        style_t = transform(style_image).unsqueeze(0).to(device)
+        style_feats = encoder(style_t, is_test=True)
+        del style_t
+
+        stylized_feats = adaptive_instance_normalization(content_feats, style_feats)
+        del style_feats
+        stylized_feats = alpha * stylized_feats + (1 - alpha) * content_feats
+        del content_feats
+        stylized_image = decoder(stylized_feats)
+        del stylized_feats
+
+    gc.collect()
     return stylized_image
 
 
@@ -196,8 +199,8 @@ def index():
                     result_image = result_filename
                 except MemoryError:
                     error = (
-                        'Server ran out of memory (Render free tier is 512 MB). '
-                        'Use smaller images, set INFERENCE_SIZE=256, or upgrade to a 1 GB+ instance.'
+                        'Server ran out of memory (502 on Render). Use smaller JPGs, '
+                        'or upgrade to 1 GB+ and set INFERENCE_SIZE=512 in Environment.'
                     )
                 except (FileNotFoundError, RuntimeError) as e:
                     error = (

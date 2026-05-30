@@ -1,0 +1,10 @@
+# Optional Blueprint — or copy build/start commands into the Render dashboard.
+services:
+  - type: web
+    name: neural-style-transfer
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python scripts/download_weights.py
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 1 app:app
+    envVars:
+      - key: INFERENCE_SIZE
+        value: "384"
