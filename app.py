@@ -32,7 +32,7 @@ class UploadForm(FlaskForm):
     content_path = HiddenField()
     style_path = HiddenField()
     alpha = FloatField('Alpha', default=1.0)
-    submit = SubmitField('Transfer Style')
+    submit = SubmitField('Generate')
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
