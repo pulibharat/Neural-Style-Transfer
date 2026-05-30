@@ -34,5 +34,8 @@ Thumbs.db
 # Logs
 *.log
 
+# Accidental large downloads
+static/inspiration/starry_night.jpg
+
 # Mac files
 *.DS_Store

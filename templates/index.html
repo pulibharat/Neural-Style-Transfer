@@ -3,182 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Style Transfer</title>
+    <title>Neural Style Transfer · AdaIN</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #faf9f7;
-            --text: #1a1a1a;
-            --muted: #5c5c5c;
-            --border: #e0ddd8;
-            --accent: #2d5a4a;
-            --card: #ffffff;
+            --bg: #0a0c12;
+            --surface: #12151e;
+            --surface-2: #1a1e2a;
+            --text: #eef0f4;
+            --muted: #8b93a7;
+            --border: #2a3042;
+            --content: #38bdf8;
+            --style: #c084fc;
+            --blend: #818cf8;
         }
         * { box-sizing: border-box; }
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Outfit', sans-serif;
             background: var(--bg);
             color: var(--text);
-            line-height: 1.6;
             margin: 0;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(ellipse 70% 45% at 15% -5%, rgba(56, 189, 248, 0.14), transparent),
+                radial-gradient(ellipse 55% 40% at 95% 0%, rgba(192, 132, 252, 0.12), transparent);
         }
-        h1, h2, h3, .section-title {
-            font-family: 'Source Serif 4', Georgia, serif;
-            font-weight: 600;
+        h1, h2, h3, .section-title, .brand {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-weight: 400;
         }
-        a { color: var(--accent); }
-        a:hover { color: #1e3d32; }
+        a { color: var(--blend); text-decoration: none; }
+        a:hover { color: #a5b4fc; }
 
         .top-bar {
+            background: rgba(10, 12, 18, 0.85);
+            backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            background: var(--card);
-            padding: 0.75rem 0;
+            padding: 0.85rem 0;
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        .top-bar .brand {
-            font-family: 'Source Serif 4', serif;
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--text);
-            text-decoration: none;
-        }
+        .brand { font-size: 1.25rem; color: var(--text); }
         .top-bar nav a {
             color: var(--muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-left: 1.25rem;
+            font-size: 0.88rem;
+            margin-left: 1.35rem;
         }
-        .top-bar nav a:hover { color: var(--accent); }
+        .top-bar nav a:hover { color: var(--content); }
 
-        .page-header {
-            padding: 2.75rem 0 1.75rem;
+        .hero {
             text-align: center;
-            max-width: 560px;
+            padding: 2.5rem 1rem 2rem;
+            max-width: 720px;
             margin: 0 auto;
         }
-        .page-header h1 { font-size: 2.15rem; margin-bottom: 0.6rem; letter-spacing: -0.02em; }
-        .page-header p { color: var(--muted); margin: 0; font-size: 1rem; }
+        .hero h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .hero p { color: var(--muted); margin: 0 0 1.75rem; font-size: 1.05rem; }
 
-        .section {
-            padding: 2.5rem 0;
-            border-top: 1px solid var(--border);
+        .nst-pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.5rem;
         }
-        .section-title {
-            font-size: 1.35rem;
-            margin-bottom: 1rem;
-        }
-        .section-desc {
-            color: var(--muted);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .card-simple {
-            background: var(--card);
+        .nst-pipeline .pipe-box {
+            background: var(--surface-2);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.25rem;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-        }
-        .card-label {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+        }
+        .nst-pipeline .pipe-box.content { border-color: rgba(56, 189, 248, 0.5); color: var(--content); }
+        .nst-pipeline .pipe-box.style { border-color: rgba(192, 132, 252, 0.5); color: var(--style); }
+        .nst-pipeline .pipe-box.output { border-color: rgba(129, 140, 248, 0.5); color: var(--blend); }
+        .nst-pipeline .pipe-op { color: var(--muted); font-size: 1.25rem; }
+
+        .section {
+            padding: 2.75rem 0;
+            border-top: 1px solid var(--border);
+        }
+        .section-title { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .section-desc { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 640px; }
+        .subsection-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
             color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .card-simple {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
             margin-bottom: 0.75rem;
         }
+        .card-label.content-label { color: var(--content); }
+        .card-label.style-label { color: var(--style); }
+
         .preview-box {
-            width: 100%;
             height: 240px;
-            background: #f0eeeb;
+            background: var(--bg);
             border: 1px dashed var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--muted);
-            font-size: 0.9rem;
             overflow: hidden;
             margin-bottom: 0.75rem;
         }
-        .preview-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
+        .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+
         .form-control {
-            font-size: 0.9rem;
+            background: var(--surface-2);
             border-color: var(--border);
+            color: var(--text);
+            font-size: 0.9rem;
         }
         .form-control:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 0.2rem rgba(45, 90, 74, 0.15);
+            background: var(--surface-2);
+            border-color: var(--blend);
+            color: var(--text);
+            box-shadow: 0 0 0 0.2rem rgba(129, 140, 248, 0.2);
         }
+        .form-control::file-selector-button {
+            background: var(--border);
+            color: var(--text);
+            border: none;
+        }
+
         .btn-transfer {
-            background: var(--accent);
+            background: linear-gradient(135deg, var(--content), var(--style));
             border: none;
             color: #fff;
-            padding: 0.65rem 2rem;
-            font-weight: 500;
-            border-radius: 6px;
+            font-weight: 600;
+            padding: 0.7rem 2.25rem;
+            border-radius: 8px;
         }
-        .btn-transfer:hover {
-            background: #1e3d32;
-            color: #fff;
-        }
-        .alpha-wrap {
-            max-width: 400px;
-            margin: 1.5rem auto 0;
-        }
-        .alpha-wrap label {
-            font-size: 0.9rem;
-            color: var(--muted);
-        }
-        #alphaRange { width: 100%; accent-color: var(--accent); }
+        .btn-transfer:hover { opacity: 0.92; color: #fff; }
+        #alphaRange { width: 100%; accent-color: var(--blend); }
+        .alpha-wrap { max-width: 400px; margin: 1.5rem auto 0; color: var(--muted); }
 
-        .result-box {
-            margin-top: 2rem;
-            text-align: center;
-        }
+        .result-box { margin-top: 2rem; text-align: center; }
         .result-box img {
             max-width: 100%;
-            border-radius: 8px;
-            border: 1px solid var(--border);
+            border-radius: 10px;
+            border: 2px solid var(--blend);
+            box-shadow: 0 0 40px rgba(129, 140, 248, 0.15);
         }
         .alert-error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            border-radius: 6px;
+            background: rgba(127, 29, 29, 0.35);
+            border: 1px solid #b91c1c;
+            color: #fecaca;
+            border-radius: 8px;
             padding: 1rem;
             margin-top: 1.5rem;
-            font-size: 0.95rem;
         }
 
-        /* Examples — same layout, simpler look */
         .example-flow {
             display: flex;
             align-items: center;
             gap: 1.25rem;
-            padding: 1rem 0;
+            padding: 1.25rem 0;
             border-bottom: 1px solid var(--border);
         }
         .example-flow:last-child { border-bottom: none; }
-        .example-inputs {
-            flex: 1;
-            display: grid;
-            gap: 1rem;
-        }
+        .example-inputs { flex: 1; display: grid; gap: 1rem; }
         .example-output { flex: 1; }
         .example-role {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.07em;
             color: var(--muted);
             margin-bottom: 0.4rem;
             text-align: center;
@@ -187,92 +199,68 @@
             width: 100%;
             height: 200px;
             object-fit: contain;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px solid var(--border);
-            background: #f0eeeb;
+            background: var(--bg);
         }
-        .example-arrow {
-            color: var(--muted);
-            font-size: 1.5rem;
-            font-weight: 300;
-        }
+        .example-arrow { color: var(--blend); font-size: 1.5rem; }
         @media (max-width: 767px) {
             .example-flow { flex-direction: column; }
             .example-arrow { transform: rotate(90deg); }
         }
 
-        /* Inspiration */
         .papers-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 1rem;
             margin-bottom: 2.5rem;
         }
         .paper-card {
             display: block;
-            background: var(--card);
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 1.15rem 1.25rem;
-            text-decoration: none;
+            padding: 1.15rem;
             color: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
             height: 100%;
+            transition: border-color 0.2s;
         }
         .paper-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 8px 24px rgba(45, 90, 74, 0.08);
+            border-color: var(--blend);
             color: inherit;
         }
         .paper-card.featured {
-            border-color: var(--accent);
-            background: linear-gradient(135deg, #f8faf9 0%, #fff 100%);
+            border-color: var(--style);
+            background: linear-gradient(145deg, rgba(192, 132, 252, 0.08), var(--surface));
         }
         .paper-year {
-            display: inline-block;
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 600;
-            letter-spacing: 0.04em;
             text-transform: uppercase;
-            color: var(--accent);
-            background: rgba(45, 90, 74, 0.1);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+            color: var(--style);
+            margin-bottom: 0.4rem;
+            display: block;
         }
-        .paper-card h3 {
-            font-size: 1rem;
-            margin: 0 0 0.5rem;
-            line-height: 1.35;
-            color: var(--text);
-        }
-        .paper-card .paper-authors {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin: 0;
-        }
-        .paper-card .paper-link {
-            font-size: 0.8rem;
-            margin-top: 0.65rem;
-            display: inline-block;
-        }
+        .paper-card h3 { font-size: 1.05rem; margin: 0 0 0.4rem; color: var(--text); line-height: 1.35; }
+        .paper-authors { font-size: 0.85rem; color: var(--muted); margin: 0; }
+        .paper-link { font-size: 0.8rem; margin-top: 0.5rem; display: inline-block; }
+
         .inspo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 1.25rem;
         }
         .inspo-card {
             margin: 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 10px;
             overflow: hidden;
-            border: 1px solid var(--border);
-            background: var(--card);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .inspo-card .img-wrap {
-            position: relative;
             height: 200px;
-            background: #ebe8e4;
+            background: var(--bg);
             overflow: hidden;
         }
         .inspo-card img {
@@ -282,48 +270,39 @@
             display: block;
         }
         .inspo-card figcaption {
-            padding: 0.75rem 1rem;
+            padding: 0.85rem 1rem;
             font-size: 0.82rem;
             color: var(--muted);
-            line-height: 1.4;
         }
         .inspo-card figcaption strong {
             display: block;
             color: var(--text);
-            font-weight: 600;
-            margin-bottom: 0.15rem;
-        }
-        .subsection-label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--muted);
-            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
         }
 
-        /* FAQ */
         .accordion-item {
+            background: var(--surface);
             border: 1px solid var(--border);
             margin-bottom: 0.5rem;
-            border-radius: 6px !important;
-            overflow: hidden;
+            border-radius: 8px !important;
         }
         .accordion-button {
+            background: var(--surface-2);
+            color: var(--text);
             font-size: 0.95rem;
-            font-weight: 500;
-            background: var(--card);
         }
         .accordion-button:not(.collapsed) {
-            background: #f0eeeb;
+            background: rgba(129, 140, 248, 0.12);
             color: var(--text);
             box-shadow: none;
         }
-        .accordion-body { font-size: 0.9rem; color: var(--muted); }
+        .accordion-button::after { filter: invert(0.8); }
+        .accordion-body { color: var(--muted); font-size: 0.9rem; }
 
         .site-footer {
             border-top: 1px solid var(--border);
-            padding: 1.5rem 0;
+            padding: 1.5rem;
             text-align: center;
             font-size: 0.85rem;
             color: var(--muted);
@@ -332,7 +311,7 @@
         .loader-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(250, 249, 247, 0.92);
+            background: rgba(10, 12, 18, 0.92);
             z-index: 9999;
             display: none;
             align-items: center;
@@ -340,14 +319,15 @@
             flex-direction: column;
         }
         .loader-overlay.active { display: flex; }
-        .spinner-border { color: var(--accent); }
+        .loader-overlay p { color: var(--muted); }
+        .spinner-border { color: var(--blend); }
     </style>
 </head>
 <body>
 
 <header class="top-bar">
     <div class="container d-flex flex-wrap justify-content-between align-items-center">
-        <a class="brand" href="#tool">Neural Style Transfer</a>
+        <a class="brand text-decoration-none" href="#tool">Neural Style Transfer</a>
         <nav>
             <a href="#tool">Try it</a>
             <a href="#examples">Examples</a>
@@ -357,25 +337,31 @@
     </div>
 </header>
 
-<header class="page-header container">
-    <h1>Style transfer with AdaIN</h1>
-    <p>Upload a content photo and a style reference. The model blends them using adaptive instance normalization.</p>
+<header class="hero container">
+    <h1>Blend photos with painting styles</h1>
+    <p>Neural style transfer maps the look of a style image onto your photo using AdaIN — adaptive instance normalization in a VGG encoder–decoder.</p>
+    <div class="nst-pipeline" aria-hidden="true">
+        <span class="pipe-box content">Content</span>
+        <span class="pipe-op">+</span>
+        <span class="pipe-box style">Style</span>
+        <span class="pipe-op">→</span>
+        <span class="pipe-box output">Stylized output</span>
+    </div>
 </header>
 
 <section id="tool" class="section pt-0">
     <div class="container">
         <form method="post" enctype="multipart/form-data" id="uploadForm">
             {{ form.hidden_tag() }}
-
             <div class="row g-4">
                 <div class="col-md-6">
                     <div class="card-simple">
-                        <div class="card-label">Content image</div>
+                        <div class="card-label content-label">Content image</div>
                         <div class="preview-box" id="contentPreview">
                             {% if content_image %}
                                 <img src="{{ url_for('send_image', filename=content_image) }}" alt="Content">
                             {% else %}
-                                <span>No image selected</span>
+                                <span>Your photo</span>
                             {% endif %}
                         </div>
                         {{ form.content(class="form-control", onchange="previewFile(this, 'contentPreview')") }}
@@ -383,24 +369,22 @@
                 </div>
                 <div class="col-md-6">
                     <div class="card-simple">
-                        <div class="card-label">Style image</div>
+                        <div class="card-label style-label">Style image</div>
                         <div class="preview-box" id="stylePreview">
                             {% if style_image %}
                                 <img src="{{ url_for('send_image', filename=style_image) }}" alt="Style">
                             {% else %}
-                                <span>No image selected</span>
+                                <span>Painting or texture</span>
                             {% endif %}
                         </div>
                         {{ form.style(class="form-control", onchange="previewFile(this, 'stylePreview')") }}
                     </div>
                 </div>
             </div>
-
             <div class="alpha-wrap text-center">
-                <label for="alphaRange" class="d-block mb-2">Style strength: <strong id="rangeValue">1.0</strong></label>
+                <label for="alphaRange">Style strength: <strong id="rangeValue" style="color:var(--text)">1.0</strong></label>
                 {{ form.alpha(class="form-control-range", id="alphaRange", type="range", min="0", max="1", step="0.1") }}
             </div>
-
             <div class="text-center mt-4">
                 {{ form.submit(class="btn btn-transfer", value="Generate") }}
             </div>
@@ -411,15 +395,13 @@
             <h2 class="section-title">Result</h2>
             <img src="{{ url_for('send_image', filename=result_image) }}" alt="Stylized output">
             <div class="mt-3">
-                <a href="{{ url_for('send_image', filename=result_image) }}" download class="btn btn-outline-secondary btn-sm">Download</a>
+                <a href="{{ url_for('send_image', filename=result_image) }}" download class="btn btn-outline-light btn-sm">Download</a>
             </div>
         </div>
         {% endif %}
 
         {% if error %}
-        <div class="alert-error" role="alert">
-            <strong>Error:</strong> {{ error }}
-        </div>
+        <div class="alert-error"><strong>Error:</strong> {{ error }}</div>
         {% endif %}
     </div>
 </section>
@@ -427,8 +409,7 @@
 <section id="examples" class="section">
     <div class="container">
         <h2 class="section-title">Examples</h2>
-        <p class="section-desc">Each row shows the content image, the style below it, and the output beside them.</p>
-
+        <p class="section-desc">Content and style inputs with model outputs from this project.</p>
         <div class="card-simple">
             <div class="example-flow">
                 <div class="example-inputs">
@@ -441,13 +422,12 @@
                         <img src="{{ url_for('send_example', filename='i-p/style 1.png') }}" alt="Style" class="example-image">
                     </div>
                 </div>
-                <div class="example-arrow" aria-hidden="true">→</div>
+                <div class="example-arrow">→</div>
                 <div class="example-output">
                     <div class="example-role">Output</div>
                     <img src="{{ url_for('send_example', filename='o-p/o_p style 1.jpg') }}" alt="Output" class="example-image">
                 </div>
             </div>
-
             <div class="example-flow">
                 <div class="example-inputs">
                     <div>
@@ -459,7 +439,7 @@
                         <img src="{{ url_for('send_example', filename='i-p/style 2.jpg') }}" alt="Style" class="example-image">
                     </div>
                 </div>
-                <div class="example-arrow" aria-hidden="true">→</div>
+                <div class="example-arrow">→</div>
                 <div class="example-output">
                     <div class="example-role">Output</div>
                     <img src="{{ url_for('send_example', filename='o-p/o_p style 2.jpg') }}" alt="Output" class="example-image">
@@ -472,33 +452,33 @@
 <section id="inspiration" class="section">
     <div class="container">
         <h2 class="section-title">Inspiration &amp; research</h2>
-        <p class="section-desc">Neural style transfer blends a photo with a painting’s look. This app uses <strong>AdaIN</strong> (2017). Below: landmark papers and example imagery you might use as style references.</p>
+        <p class="section-desc">Classic NST demos often use famous paintings as style references. This app uses AdaIN (2017). Images below are served from this site so they always load.</p>
 
         <p class="subsection-label">Key papers</p>
         <div class="papers-grid">
-            <a class="paper-card" href="https://arxiv.org/abs/1508.06576" target="_blank" rel="noopener noreferrer">
-                <span class="paper-year">2015 · NST</span>
+            <a class="paper-card" href="https://arxiv.org/abs/1508.06576" target="_blank" rel="noopener">
+                <span class="paper-year">2015 · Gatys et al.</span>
                 <h3>A Neural Algorithm of Artistic Style</h3>
-                <p class="paper-authors">Gatys, Ecker &amp; Bethge</p>
-                <span class="paper-link">Read on arXiv →</span>
+                <p class="paper-authors">Started modern neural style transfer</p>
+                <span class="paper-link">arXiv:1508.06576 →</span>
             </a>
-            <a class="paper-card" href="https://arxiv.org/abs/1603.03417" target="_blank" rel="noopener noreferrer">
-                <span class="paper-year">2016 · Fast</span>
+            <a class="paper-card" href="https://arxiv.org/abs/1603.03417" target="_blank" rel="noopener">
+                <span class="paper-year">2016 · Johnson et al.</span>
                 <h3>Perceptual Losses for Real-Time Style Transfer</h3>
-                <p class="paper-authors">Johnson, Alahi &amp; Fei-Fei</p>
-                <span class="paper-link">Read on arXiv →</span>
+                <p class="paper-authors">Faster feed-forward models</p>
+                <span class="paper-link">arXiv:1603.03417 →</span>
             </a>
-            <a class="paper-card featured" href="https://arxiv.org/abs/1703.08092" target="_blank" rel="noopener noreferrer">
+            <a class="paper-card featured" href="https://arxiv.org/abs/1703.08092" target="_blank" rel="noopener">
                 <span class="paper-year">2017 · AdaIN · This app</span>
                 <h3>Arbitrary Style Transfer in Real-time with Adaptive Instance Normalization</h3>
                 <p class="paper-authors">Huang &amp; Belongie</p>
-                <span class="paper-link">Read on arXiv →</span>
+                <span class="paper-link">arXiv:1703.08092 →</span>
             </a>
-            <a class="paper-card" href="https://arxiv.org/abs/1807.10201" target="_blank" rel="noopener noreferrer">
-                <span class="paper-year">2018</span>
+            <a class="paper-card" href="https://arxiv.org/abs/1807.10201" target="_blank" rel="noopener">
+                <span class="paper-year">2018 · Li et al.</span>
                 <h3>Universal Style Transfer via Feature Transforms</h3>
-                <p class="paper-authors">Li, Liu, Yang, Lu &amp; Huang</p>
-                <span class="paper-link">Read on arXiv →</span>
+                <p class="paper-authors">Related universal methods</p>
+                <span class="paper-link">arXiv:1807.10201 →</span>
             </a>
         </div>
 
@@ -506,58 +486,42 @@
         <div class="inspo-grid">
             <figure class="inspo-card">
                 <div class="img-wrap">
-                    <img
-                        src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600&auto=format&fit=crop&q=80"
-                        alt="Colorful abstract painting"
-                        loading="lazy"
-                        referrerpolicy="no-referrer">
+                    <img src="{{ url_for('static', filename='inspiration/content_photo.jpg') }}" alt="Portrait photo as content">
                 </div>
                 <figcaption>
-                    <strong>Abstract / texture</strong>
-                    Bold brushstrokes work well as style images. Photo via Unsplash.
+                    <strong>Content (photo)</strong>
+                    A clear photo works best — faces, landscapes, or objects. Similar to portraits used in early NST demos.
                 </figcaption>
             </figure>
             <figure class="inspo-card">
                 <div class="img-wrap">
-                    <img
-                        src="https://images.unsplash.com/photo-1578301978693-30eb097f77de?w=600&auto=format&fit=crop&q=80"
-                        alt="Classical art in a museum"
-                        loading="lazy"
-                        referrerpolicy="no-referrer">
+                    <img src="{{ url_for('static', filename='inspiration/style_reference.png') }}" alt="Painterly style reference">
                 </div>
                 <figcaption>
-                    <strong>Classical painting</strong>
-                    Museum masterpieces are a common style source. Photo via Unsplash.
+                    <strong>Style · painterly</strong>
+                    Paintings like <a href="https://en.wikipedia.org/wiki/The_Starry_Night" target="_blank" rel="noopener">Van Gogh’s <em>Starry Night</em></a> are classic style references in NST papers.
                 </figcaption>
             </figure>
             <figure class="inspo-card">
                 <div class="img-wrap">
-                    <img
-                        src="https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&auto=format&fit=crop&q=80"
-                        alt="Vibrant painted portrait style"
-                        loading="lazy"
-                        referrerpolicy="no-referrer">
+                    <img src="{{ url_for('static', filename='inspiration/style_texture.jpg') }}" alt="Rich texture style">
                 </div>
                 <figcaption>
-                    <strong>Expressive color</strong>
-                    High-contrast palettes transfer strongly. Photo via Unsplash.
+                    <strong>Style · texture &amp; color</strong>
+                    Works reminiscent of <a href="https://en.wikipedia.org/wiki/Girl_with_a_Pearl_Earring" target="_blank" rel="noopener"><em>Girl with a Pearl Earring</em></a> or bold brushwork transfer well.
                 </figcaption>
             </figure>
             <figure class="inspo-card">
                 <div class="img-wrap">
-                    <img
-                        src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&auto=format&fit=crop&q=80"
-                        alt="Oil painting palette and brushes"
-                        loading="lazy"
-                        referrerpolicy="no-referrer">
+                    <img src="{{ url_for('static', filename='inspiration/stylized_output.jpg') }}" alt="Neural style transfer output">
                 </div>
                 <figcaption>
-                    <strong>Painterly materials</strong>
-                    Photos of paint and canvas can also guide texture. Photo via Unsplash.
+                    <strong>Stylized output</strong>
+                    The network merges content structure with style statistics — what you get when you click Generate.
                 </figcaption>
             </figure>
         </div>
-        <p class="small text-muted mt-3 mb-0">Images are for inspiration only — upload your own content and style photos in the tool above.</p>
+        <p class="small mt-3 mb-0" style="color:var(--muted)">Upload your own images in the tool above. Famous paintings are linked for context; sample thumbnails are from this project.</p>
     </div>
 </section>
 
@@ -570,7 +534,7 @@
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqOne">Is it a pretrained model?</button>
                 </h2>
                 <div id="faqOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body">No, we train a decoder ourselves. The VGG encoder uses standard AdaIN pretrained weights.</div>
+                    <div class="accordion-body">We train our own decoder. The VGG encoder uses standard AdaIN pretrained weights.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -586,7 +550,7 @@
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqThree">Which painting styles work?</button>
                 </h2>
                 <div id="faqThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body">You can use almost any painting or texture as the style image — impressionist, abstract, watercolor, sketch, and more.</div>
+                    <div class="accordion-body">Impressionist, abstract, watercolor, sketch, and most painted textures work as style images.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -594,7 +558,7 @@
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqFour">Tech stack?</button>
                 </h2>
                 <div id="faqFour" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body">Python, PyTorch, Flask.</div>
+                    <div class="accordion-body">Python, PyTorch, Flask — AdaIN encoder–decoder architecture.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -602,7 +566,7 @@
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqFive">Training data?</button>
                 </h2>
                 <div id="faqFive" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                    <div class="accordion-body">The decoder is trained on image datasets with content and style pairs.</div>
+                    <div class="accordion-body">The decoder is trained on paired content and style image datasets.</div>
                 </div>
             </div>
         </div>
@@ -610,12 +574,12 @@
 </section>
 
 <footer class="site-footer">
-    <div class="container">Neural style transfer demo · AdaIN</div>
+    Neural style transfer · AdaIN demo
 </footer>
 
 <div class="loader-overlay" id="loader">
     <div class="spinner-border mb-3" role="status"></div>
-    <p class="text-muted mb-0">Generating…</p>
+    <p class="mb-0">Running style transfer…</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -630,29 +594,15 @@
         };
         reader.readAsDataURL(file);
     }
-
-    const form = document.getElementById('uploadForm');
-    const loader = document.getElementById('loader');
-    if (form && loader) {
-        form.addEventListener('submit', function () {
-            loader.classList.add('active');
-        });
-    }
-
+    document.getElementById('uploadForm')?.addEventListener('submit', function () {
+        document.getElementById('loader')?.classList.add('active');
+    });
     const range = document.getElementById('alphaRange');
     const rangeValue = document.getElementById('rangeValue');
     if (range && rangeValue) {
-        range.addEventListener('input', function () {
-            rangeValue.textContent = range.value;
-        });
+        range.addEventListener('input', function () { rangeValue.textContent = range.value; });
     }
-
-    window.addEventListener('load', function () {
-        const result = document.getElementById('resultSection');
-        if (result) {
-            result.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    });
+    document.getElementById('resultSection')?.scrollIntoView({ behavior: 'smooth' });
 </script>
 </body>
 </html>
