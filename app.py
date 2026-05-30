@@ -38,9 +38,8 @@ class UploadForm(FlaskForm):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.set_num_threads(1)
 
-# Render free tier is 512 MB RAM — use 256px inference unless overridden
-_default_size = '256' if os.environ.get('RENDER') else '512'
-INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', _default_size))
+# Same resolution locally and on Render (512). Set INFERENCE_SIZE=384 or 256 on Render if OOM.
+INFERENCE_SIZE = int(os.environ.get('INFERENCE_SIZE', '512'))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WEIGHTS_DIR = os.path.join(BASE_DIR, 'weights')
