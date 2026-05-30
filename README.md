@@ -110,7 +110,7 @@ pip install -r requirements.txt && python scripts/download_weights.py
 - On Render, set **Start command** to match the Procfile (or leave blank to use Procfile):
   `gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 1 app:app`
 - **Memory:** PyTorch + VGG needs more than **512 MB**. Free tier may hit `SIGKILL` / out of memory at 512px — use **Starter (1 GB+)** or set `INFERENCE_SIZE=384` (or `256`) in Environment.
-- **Quality vs 502:** Render defaults to **384px** (local is **512px**). HTTP 502 on Generate usually means out-of-memory or timeout at 512px on free tier. For local-matching quality: upgrade to **1 GB+** and set `INFERENCE_SIZE=512`.
+- **Quality vs 502:** Render defaults to **256px** (stable). Local uses **512px**. For better deploy quality: upgrade to **1 GB+** and set `INFERENCE_SIZE=384` or `512`.
 - Render defaults to Python 3.14; this app needs Python 3.12 for `torch==2.2.2`.
 - Pin Python with a `.python-version` file containing `3.12` (do not use `3.12.17`; Render cannot install it).
 - On Render, use **Manual Deploy → Deploy latest commit** so the build picks up the newest `main`, not an old failed deploy.

@@ -7,4 +7,4 @@ services:
     startCommand: gunicorn --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --threads 1 app:app
     envVars:
       - key: INFERENCE_SIZE
-        value: "384"
+        value: "256"
